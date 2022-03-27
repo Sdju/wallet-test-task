@@ -19,51 +19,13 @@ export default class TradeApi extends Plugin {
     this.$eventBus.$on(TradeApi.Events.SUBSCRIBE, this.subscribe.bind(this));
   }
 
-  async subscribe() {
+  async subscribe({ symbol }) {
     let data = null;
     let lastUpdateId = null;
 
-    /**
-     * Пишем оптимальный алгоритм для мержа разницы
-     * */
-    const applyChange = (diff, dataTable) => {
-      let diffIndex = 0;
-      let tableIndex = 0;
-      const newTable = [];
-
-      while (diffIndex !== diff.length) {
-        const diffValue = diff[diffIndex];
-        const tableValue = dataTable[tableIndex];
-        if (diffValue[0] === tableValue[0]) {
-          if (Number(diffValue[1]) !== 0) {
-            newTable.push(diffValue);
-          }
-          tableIndex += 1;
-          if (tableIndex === dataTable.length) {
-            newTable.push(...diff.slice(diffIndex).filter(([, amount]) => Number(amount) !== 0));
-            break;
-          }
-        } else if (diffValue[0] < tableValue[0]) {
-          newTable.push(tableValue);
-          tableIndex += 1;
-          if (tableIndex === dataTable.length) {
-            newTable.push(...diff.slice(diffIndex).filter(([, amount]) => Number(amount) !== 0));
-            break;
-          }
-          // eslint-disable-next-line no-continue
-          continue;
-        } else if (Number(diffValue[1]) !== 0) {
-          newTable.push(diffValue);
-        }
-
-        diffIndex += 1;
-      }
-      return newTable.slice(0, 500);
-    };
-
-    await BinanceApi.subscribeBySymbol('BTCUSDT', async (diff) => {
+    const close = await BinanceApi.subscribeBySymbol(symbol, async (diff) => {
       if (!data) {
-        data = await BinanceApi.getBySymbol();
+        data = await BinanceApi.getBySymbol(symbol);
         lastUpdateId = data.lastUpdateId;
         this.$eventBus.$emit(TradeApi.Events.SET_DATA, data);
       }
@@ -72,14 +34,18 @@ export default class TradeApi extends Plugin {
         return;
       }
 
-      data.bids = applyChange(diff.b, data.bids);
-      data.asks = applyChange(diff.a, data.asks);
-      this.$eventBus.$emit(TradeApi.Events.SET_DATA, data);
+      this.$eventBus.$emit(TradeApi.Events.CHANGE_DATA, {
+        asks: diff.a,
+        bids: diff.b,
+      });
     });
+    this.$eventBus.$on(TradeApi.Events.UNSUBSCRIBE, close);
   }
 
   static Events = {
     SUBSCRIBE: 'trade-api:subscribe',
+    UNSUBSCRIBE: 'trade-api:unsubscribe',
     SET_DATA: 'trade-api:set-data',
+    CHANGE_DATA: 'trade-api:change-data',
   }
 }

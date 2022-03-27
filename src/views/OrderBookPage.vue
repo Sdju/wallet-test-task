@@ -2,42 +2,12 @@
   <div class="order-book-page">
     <div class="order-book-page__bid">
       <CustomScrollbar class="order-book-page__scroll">
-        <table class="order-book-page__table">
-          <thead>
-          <tr>
-            <th>Price</th>
-            <th>Amount</th>
-            <th v-if="!isMobile">Total</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="line in bids" :key="`${line.id}`">
-            <td>{{ line.price }}</td>
-            <td>{{ line.amount }}</td>
-            <td v-if="!isMobile">{{ line.total }}</td>
-          </tr>
-          </tbody>
-        </table>
+        <OrderBookTable class="order-book-page__table" :data="asks" />
       </CustomScrollbar>
     </div>
     <div class="order-book-page__ask">
       <CustomScrollbar class="order-book-page__scroll">
-        <table class="order-book-page__table">
-          <thead>
-          <tr>
-            <th>Price</th>
-            <th>Amount</th>
-            <th v-if="!isMobile">Total</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="line in bids" :key="`${line.id}`">
-            <td>{{ line.price }}</td>
-            <td>{{ line.amount }}</td>
-            <td v-if="!isMobile">{{ line.total }}</td>
-          </tr>
-          </tbody>
-        </table>
+        <OrderBookTable class="order-book-page__table" :data="bids" />
       </CustomScrollbar>
     </div>
   </div>
@@ -46,9 +16,11 @@
 import PluginsNames from '@/consts/plugins-names';
 import vueCustomScrollbar from 'vue-custom-scrollbar';
 import 'vue-custom-scrollbar/dist/vueScrollbar.css';
+import OrderBookTable from '@/components/OrderBookTable.vue';
 
 export default {
   components: {
+    OrderBookTable,
     CustomScrollbar: vueCustomScrollbar,
   },
 
@@ -64,39 +36,70 @@ export default {
     const {
       [PluginsNames.TRADE_API]: TradeApiEvents,
     } = this.$eventBus.Events;
-    this.$eventBus.$emit(TradeApiEvents.SUBSCRIBE);
+    this.$eventBus.$emit(TradeApiEvents.SUBSCRIBE, {
+      symbol: 'BTCUSDT',
+    });
     this.$eventBus.$on(TradeApiEvents.SET_DATA, this.setData);
-  },
-
-  beforeMount() {
-    this.isMobile = window.innerWidth < 800;
-    window.addEventListener('resize', this.onResize);
+    this.$eventBus.$on(TradeApiEvents.CHANGE_DATA, this.updateData);
   },
 
   beforeDestroy() {
-    window.removeEventListener('resize', this.onResize);
-
     const {
       [PluginsNames.TRADE_API]: TradeApiEvents,
     } = this.$eventBus.Events;
     this.$eventBus.$emit(TradeApiEvents.UNSUBSCRIBE);
-    this.$eventBus.$off(TradeApiEvents.TradeApiEvents.SET_DATA);
+    this.$eventBus.$off(TradeApiEvents.SET_DATA, this.setData);
+    this.$eventBus.$off(TradeApiEvents.CHANGE_DATA, this.updateData);
   },
 
   methods: {
     setData({ asks, bids }) {
-      this.asks = asks.map(([price, amount]) => ({
-        price,
-        amount,
-        total: price * amount,
-        id: `${price}/${amount}`,
-      }));
-      this.bids = bids.map(([price, amount]) => ({
-        price,
-        amount,
-        total: price * amount,
-        id: `${price}/${amount}`,
-      }));
+      this.asks = asks;
+      this.bids = bids;
+    },
+
+    updateData({ asks, bids }) {
+      this.asks = this.applyChange(asks, this.asks, true);
+      this.bids = this.applyChange(bids, this.bids, false);
+    },
+
+    /**
+     * Пишем "оптимальный" алгоритм для мержа разницы
+     * Eсть идеи по улучшениям, но уже и так много времени на него ушло
+     * */
+    applyChange(diff, dataTable, reversed) {
+      let diffIndex = 0;
+      let tableIndex = 0;
+      const newTable = [];
+
+      while (diffIndex !== diff.length) {
+        const diffValue = diff[diffIndex];
+        const tableValue = dataTable[tableIndex];
+        if (diffValue[0] === tableValue[0]) {
+          if (Number(diffValue[1]) !== 0) {
+            newTable.push(diffValue);
+          }
+          tableIndex += 1;
+          if (tableIndex === dataTable.length) {
+            newTable.push(...diff.slice(diffIndex).filter(([, amount]) => Number(amount) !== 0));
+            break;
+          }
+        } else if ((diffValue[0] < tableValue[0]) !== reversed) {
+          newTable.push(tableValue);
+          tableIndex += 1;
+          if (tableIndex === dataTable.length) {
+            newTable.push(...diff.slice(diffIndex).filter(([, amount]) => Number(amount) !== 0));
+            break;
+          }
+          // eslint-disable-next-line no-continue
+          continue;
+        } else if (Number(diffValue[1]) !== 0) {
+          newTable.push(diffValue);
+        }
+
+        diffIndex += 1;
+      }
+      return newTable.slice(0, 500);
     },
 
     onResize() {
@@ -143,16 +146,6 @@ export default {
 
   &__table {
     width: 100%;
-    border-collapse: collapse;
-
-    th, td {
-      border: 1px solid #555;
-      width: 50%;
-
-      @media all and (min-width: 800px) {
-        width: 33.33333%;
-      }
-    }
   }
 }
 </style>
