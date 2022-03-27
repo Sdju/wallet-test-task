@@ -94,6 +94,7 @@ export default {
       const tradePlugin = this.$core.plugins[PluginsNames.TRADE_API];
       if (this.logFlushTimer) {
         clearTimeout(this.logFlushTimer);
+        this.logFlushTimer = null;
       }
       const {
         [PluginsNames.TRADE_API]: TradeApiEvents,
@@ -111,6 +112,7 @@ export default {
         [PluginsNames.TRADE_API]: TradeApiEvents,
       } = this.$eventBus.Events;
       this.logs = [];
+      this.logBuffer = [];
       this.$eventBus.$emit(TradeApiEvents.CHANGE_SYMBOL, symbol);
     },
 
