@@ -50,6 +50,12 @@ export default {
   beforeDestroy() {
     window.removeEventListener('resize', this.onResize);
   },
+
+  methods: {
+    onResize() {
+      this.isMobile = window.innerWidth < 800;
+    },
+  },
 };
 </script>
 
