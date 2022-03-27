@@ -10,7 +10,8 @@ export default class EventBus extends Plugin {
     });
 
     this.emitter = new Vue();
-    // создаем пулл возможных ивентов
+
+    // создаем пулл для возможных ивентов
     this.emitter.Events = {};
   }
 

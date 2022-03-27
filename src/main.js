@@ -4,6 +4,7 @@ import router from './router';
 import Core from './scripts/core';
 import EventBus from './scripts/plugins/event-bus';
 import TradeApi from './scripts/plugins/trade-api';
+import './global.css';
 
 Vue.config.productionTip = false;
 
