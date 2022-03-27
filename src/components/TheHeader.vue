@@ -20,6 +20,7 @@ export default {
   background-color: #0288D1;
   box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
   padding: 12px;
+  justify-content: center;
   height: fit-content;
 
   &__link {

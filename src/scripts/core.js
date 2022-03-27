@@ -16,6 +16,7 @@ export default class Core {
     }
 
     this.plugins[plugin.name] = plugin;
+    plugin.install(this);
   }
 
   vueInstall(Vue) {
