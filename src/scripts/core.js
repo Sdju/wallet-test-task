@@ -41,7 +41,7 @@ export default class Core {
   }
 
   /**
-   * Возвращаем уникальный экземпляр едра для страницы
+   * Возвращаем уникальный экземпляр ядра для страницы
    * */
   static get instance() {
     if (window.$WALLET_CORE) {
