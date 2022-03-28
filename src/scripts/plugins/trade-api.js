@@ -118,6 +118,7 @@ export default class TradeApi extends Plugin {
 
         tableIndex += 1;
         if (tableIndex === dataTable.length) {
+          diffIndex += 1;
           finalFilter();
           break;
         }
