@@ -118,6 +118,8 @@ export default class TradeApi extends Plugin {
 
         tableIndex += 1;
         if (tableIndex === dataTable.length) {
+          // итоговый фикс
+          diffIndex += 1;
           finalFilter();
           break;
         }
@@ -148,7 +150,22 @@ export default class TradeApi extends Plugin {
       newTable.push(...dataTable.slice(tableIndex));
     }
 
-    return newTable.slice(0, 500);
+    /**
+     * Детекция ошибки изнутри
+     */
+    const result = newTable.slice(0, 500);
+    const error = result.findIndex(([price], index) => price === result[index - 1]?.[0]);
+    if (error >= 0) {
+      console.log([
+        diff,
+        dataTable,
+        reversed,
+        error,
+        [result[error - 1], result[error]],
+      ]);
+    }
+
+    return result;
   }
 
   static DiffTypes = {
