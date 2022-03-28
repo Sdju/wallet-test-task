@@ -91,13 +91,12 @@ export default class TradeApi extends Plugin {
     while (diffIndex !== diff.length) {
       const diffValue = diff[diffIndex];
       const tableValue = dataTable[tableIndex];
-      const [
-        diffPrice,
-        diffAmount,
-      ] = diffValue;
+      const tablePrice = Number(tableValue[0]);
+      const diffPrice = Number(diffValue[0]);
+      const diffAmount = diffValue[1];
 
       // равное значение удаление/изменение
-      if (diffPrice === tableValue[0]) {
+      if (diffPrice === tablePrice) {
         if (Number(diffAmount) !== 0) {
           newTable.push(diffValue);
 
@@ -123,7 +122,7 @@ export default class TradeApi extends Plugin {
           finalFilter();
           break;
         }
-      } else if ((diffPrice < tableValue[0]) !== reversed) {
+      } else if ((diffPrice < tablePrice) !== reversed) {
         newTable.push(tableValue);
         tableIndex += 1;
         if (tableIndex === dataTable.length) {
