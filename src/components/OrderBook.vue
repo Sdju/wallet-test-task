@@ -2,12 +2,12 @@
   <div class="order-book">
     <div class="order-book__bid">
       <CustomScrollbar class="order-book__scroll">
-        <OrderBookTable class="order-book__table" :data="asks" />
+        <OrderBookTable class="order-book__table" :data="bids" />
       </CustomScrollbar>
     </div>
     <div class="order-book__ask">
       <CustomScrollbar class="order-book__scroll">
-        <OrderBookTable class="order-book__table" :data="bids" />
+        <OrderBookTable class="order-book__table" :data="asks" />
       </CustomScrollbar>
     </div>
   </div>
